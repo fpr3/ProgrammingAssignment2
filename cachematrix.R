@@ -12,14 +12,14 @@
 ## the matrix changes.
 
 makeCacheMatrix <- function(x = matrix()) {
-## The makeCacheMatrix function accepts a matrix x as its argument, initializes
+## This creates a special "matrix" object that can cache its inverse.
+## The function accepts a matrix x as its argument, initializes
 ## a location m where the inverse will be cached, and implements the following
 ## functions:
 ##         set - stores the base matrix in the parent environment and clears
 ##               the cache;
 ##         get - recalls the base matrix;
-##         setinverse - calculates the inverse of the base matrix and caches
-##               the result;
+##         setinverse - stores the inverse of the base matrix in cache;
 ##         getinverse - returns the cached matrix inverse or NULL if the
 ##               current base matrix has not yet been solved.
 #################################################
@@ -43,9 +43,8 @@ makeCacheMatrix <- function(x = matrix()) {
         get <- function() x
         
         # SETINVERSE accepts a matrix argument
-        #  1) Calculate and store the matrix inverse in the parent environment.
-        setinverse <- function()
-                m <<- solve(x)
+        #  1) Store the passed matrix inverse in the parent environment.
+        setinverse <- function(matinv) m <<- matinv
         
         # GETINVERSE
         #  1) Return the matrix inverse cache from parent environment. Will 
@@ -60,12 +59,16 @@ makeCacheMatrix <- function(x = matrix()) {
 }
 
 
-## The cacheSolve function returns either a cached or newly calculated matrix
+cacheSolve <- function(x, ...) {
+## This computes the inverse of the special "matrix" returned by 
+## makeCacheMatrix above. If the inverse has already been calculated (and the 
+## matrix has not changed), then we retrieve the inverse from the cache.
+## The function returns either a cached or newly calculated matrix
 ## inverse value for our "special" CacheMatrix variables. It first checks
 ## whether a value has been cached and if so returns that value. Otherwise it
 ## calculates the matrix inverse (solve()) and returns this inverse.
-cacheSolve <- function(x, ...) {
-        ## Pass argument x created by above function makeCacheMatrix
+## Passed argument x created by above function makeCacheMatrix.
+#################################################
 
         # load the inverse value
         m <- x$getinverse()
@@ -73,10 +76,13 @@ cacheSolve <- function(x, ...) {
                 # Since NULL wasn't found we have valid cache.
                 message("getting cached data")
                 return(m)
+                # Done!
         }
         
-        # If we make it here we retrieved NULL from x$getinverse
+        # Can only arrive here when NULL is returned from x$getinverse
         # indicating matrix inverse was not yet calculated.
-        x$setinverse() # Calculates inverse and populates cache.
-        x$getinverse() # Retrieves newly cached value to return to caller.
+        mymat <- x$get()  
+        m <- solve(mymat)
+        x$setinverse(m)   # Cache the matrix inverse
+        m
 }
